@@ -4,7 +4,7 @@ mod handshake;
 pub use self::codec::APCodec;
 pub use self::handshake::handshake;
 
-use futures::{Future, Sink, Stream};
+use futures::{future, Future, Sink, Stream};
 use protobuf::{self, Message};
 use std::io;
 use std::net::ToSocketAddrs;
@@ -30,7 +30,14 @@ pub fn connect(
             info!("Using proxy \"{}\"", url);
             (url.to_socket_addrs().unwrap().next().unwrap(), Some(addr))
         }
-        None => (addr.to_socket_addrs().unwrap().next().unwrap(), None),
+        None => {
+            match addr.to_socket_addrs() {
+                Ok(mut val) => {
+                    (val.next().unwrap(), None)
+                },
+                Err(err) => return Box::new(future::err(err)),
+            }
+        },
     };
 
     let socket = TcpStream::connect(&addr, handle);
