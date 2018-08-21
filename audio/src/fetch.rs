@@ -40,6 +40,8 @@ pub struct AudioFileStreaming {
     seek: mpsc::UnboundedSender<u64>,
 
     shared: Arc<AudioFileShared>,
+
+    chunk_count: usize,
 }
 
 struct AudioFileShared {
@@ -47,6 +49,12 @@ struct AudioFileShared {
     chunk_count: usize,
     cond: Condvar,
     bitmap: Mutex<BitSet>,
+}
+
+impl AudioFileStreaming {
+    pub fn get_estimated_size(&self) -> usize {
+        self.chunk_count * CHUNK_SIZE
+    }
 }
 
 impl AudioFileOpenStreaming {
@@ -87,6 +95,7 @@ impl AudioFileOpenStreaming {
             seek: seek_tx,
 
             shared: shared,
+            chunk_count: chunk_count,
         }
     }
 }
